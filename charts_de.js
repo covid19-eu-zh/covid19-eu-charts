@@ -98,7 +98,7 @@ Plotly.d3.csv(csv_url, function(err, rows) {
     }
   ]
   var ts_layout = {
-    title: '德国总确诊病例'
+    title: '德国总确诊病例数趋势图'
   }
 
   Plotly.newPlot('time_serie', ts_data, ts_layout)
