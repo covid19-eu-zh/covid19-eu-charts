@@ -8,28 +8,42 @@ var geojson_url =
   'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/germany.geojson'
 var geojson_key = 'properties.name'
 
+var de_state_zh = {
+  "Baden-Württemberg": "巴登-符腾堡",
+  "Bayern": "巴伐利亚",
+  "Berlin": "柏林",
+  "Brandenburg": "勃兰登堡",
+  "Bremen": "不来梅州",
+  "Hamburg": "汉堡",
+  "Hessen": "黑森",
+  "Mecklenburg-Vorpommern": "梅克伦堡-前波美拉尼亚",
+  "Niedersachsen": "下萨克森",
+  "Nordrhein-Westfalen": "北莱茵-威斯特法伦",
+  "Rheinland-Pfalz": "莱茵兰-普法尔茨",
+  "Saarland": "萨尔兰",
+  "Sachsen": "萨克森",
+  "Schleswig-Holstein": "石勒苏益格-荷尔斯泰因",
+  "Thüringen": "图林根",
+}
 Plotly.d3.csv(csv_url, function(err, rows) {
-  function unpack(rows, key) {
-    return rows.map(function(row) {
-      return row[key]
+  function unpack(rows) {
+    var daily_by_region = { regions: [] }
+    rows.map(function(row) {
+      if (daily_by_region[row[region_type]]) {
+        daily_by_region[row[region_type]]['daily_cases'].push(row['cases'])
+        daily_by_region[row[region_type]]['datetime'].push(row['datetime'])
+      } else {
+        daily_by_region[row[region_type]] = {}
+        daily_by_region[row[region_type]]['daily_cases'] = [row['cases']]
+        daily_by_region[row[region_type]]['datetime'] = [row['datetime']]
+        daily_by_region.regions.push(row[region_type])
+      }
     })
+    return daily_by_region
   }
-  var daily_by_region = { regions: [] }
-  var region = unpack(rows, region_type)
-  var cases = unpack(rows, 'cases')
-  var datetime = unpack(rows, 'datetime')
-  var datalength = rows.length
-  for (i = 0; i < datalength; i++) {
-    if (daily_by_region[region[i]]) {
-      daily_by_region[region[i]]['daily_cases'].push(cases[i])
-      daily_by_region[region[i]]['datetime'].push(datetime[i])
-    } else {
-      daily_by_region[region[i]] = {}
-      daily_by_region[region[i]]['daily_cases'] = [cases[i]]
-      daily_by_region[region[i]]['datetime'] = [datetime[i]]
-      daily_by_region.regions.push(region[i])
-    }
-  }
+  
+  daily_by_region = unpack(rows)
+  // console.log(daily_by_region)
   var data = [
     {
       type: 'choropleth',
@@ -38,7 +52,7 @@ Plotly.d3.csv(csv_url, function(err, rows) {
       z: daily_by_region.regions.map(function(reg) {
         return daily_by_region[reg].daily_cases[daily_by_region[reg].daily_cases.length - 1]
       }),
-      text: unpack(rows, region_type),
+      text: daily_by_region.regions.map(function(state) {return de_state_zh[state]}),
       autocolorscale: true,
 
       zmin: 1,
@@ -49,7 +63,7 @@ Plotly.d3.csv(csv_url, function(err, rows) {
   ]
 
   var layout = {
-    title: 'cases of COVID-19 by state',
+    title: '德国各州确诊病例',
     width: 1000,
     height: 1000,
     geo: {
@@ -84,9 +98,9 @@ Plotly.d3.csv(csv_url, function(err, rows) {
     }
   ]
   var ts_layout = {
-    title: 'Total cases in Germany'
+    title: '德国总确诊病例'
   }
 
   Plotly.newPlot('time_serie', ts_data, ts_layout)
-  console.log(daily_by_region, layout)
+  // console.log(daily_by_region, layout)
 })
